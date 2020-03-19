@@ -1,13 +1,24 @@
 #!/bin/bash
-## https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv
-## https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv
+#!/bin/bash
 ## https://www.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6
 ## https://ncov2019.live/
+if [ ! -d "backup" ]; then
+  mkdir backup;
+fi
+
+## Collect data from the covidtracking project.
 mv daily.csv backup/
 wget https://covidtracking.com/api/states/daily.csv
+
+## Collect data from the Johns Hopkins repository.
 mv time_series_19-covid-Recovered.csv backup/
 wget https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv
 mv time_series_19-covid-Confirmed.csv backup/
 wget https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv
 mv time_series_19-covid-Deaths.csv backup/
 wget https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv
+
+## WHO data, same as daily situation reports.
+mv full_data.csv backup/
+wget https://covid.ourworldindata.org/data/full_data.csv
+

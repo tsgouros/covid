@@ -142,9 +142,9 @@ threshMelt <- function(data, threshold, states=FALSE, entireUS=TRUE,
     return(melted);
 }
 
-input.confirmed <- read.csv("time_series_19-covid-Confirmed.csv", head=T);
-input.deaths <- read.csv("time_series_19-covid-Deaths.csv", head=T);
-input.recovered <- read.csv("time_series_19-covid-Recovered.csv", head=T);
+input.confirmed <- read.csv("data/time_series_19-covid-Confirmed.csv", head=T);
+input.deaths <- read.csv("data/time_series_19-covid-Deaths.csv", head=T);
+input.recovered <- read.csv("data/time_series_19-covid-Recovered.csv", head=T);
 
 latestDate <- paste0(substr(last(colnames(input.confirmed)),2,100),"20");
 
@@ -184,15 +184,15 @@ gpConfirmed <- makeNicePlot(confirmedMelt, 100, "confirmed cases",latestDate);
 gpDeaths <- makeNicePlot(deathsMelt, 20, "deaths",latestDate);
 gpRecovered <- makeNicePlot(recoveredMelt, 100, "recovered cases",latestDate);
 
-ggsave("confirmed.png", plot=gpConfirmed, device="png");
-ggsave("deaths.png", plot=gpDeaths, device="png");
-ggsave("recovered.png", plot=gpRecovered, device="png");
+ggsave("images/confirmed.png", plot=gpConfirmed, device="png");
+ggsave("images/deaths.png", plot=gpDeaths, device="png");
+ggsave("images/recovered.png", plot=gpRecovered, device="png");
 
 declutter <- data.frame(time=confirmed$time, Canada=confirmed$Canada, US=confirmed$US, Spain=confirmed$Spain, Italy=confirmed$Italy, Denmark=confirmed$Denmark, "South Korea"=confirmed[,"South Korea"], Iran=confirmed$Iran, Japan=confirmed$Japan, Germany=confirmed$Germany, "United Kingdom"=confirmed[,"United Kingdom"], China=confirmed$China);
 
 declutterMelt <- threshMelt(declutter, 100);
 gpDeclutter <- makeNicePlot(declutterMelt, 100, "confirmed cases",latestDate);
-ggsave("declutter.png", plot=gpDeclutter, device="png");
+ggsave("images/declutter.png", plot=gpDeclutter, device="png");
 
 
 ## Let's make one for states, too.
@@ -210,8 +210,11 @@ for (i in 1:length(confirmedStatesMelt$label)) {
 gpConfirmedStates <- makeNicePlot(confirmedStatesMelt, 10,
                                   "confirmed cases", latestDate);
 
-ggsave("confirmedStates.png", plot=gpConfirmedStates, device="png");
+ggsave("images/confirmedStates.png", plot=gpConfirmedStates, device="png");
 
+## These are commented out just because there isn't really enough data
+## yet to tell a story. Should work, though.
+##
 ## ## Let's make deaths for states, too.
 ## deathsStatesMelt <- threshMelt(deaths, 2, states=TRUE,
 ##                                onlyUS=TRUE, entireUS=FALSE);
@@ -229,7 +232,7 @@ ggsave("confirmedStates.png", plot=gpConfirmedStates, device="png");
 
 ## ggsave("deathsStates.png", plot=gpDeathsStates, device="png");
 
-## ## Let's make one for states, too.
+## ## Let's make one for 'recovered' for states, too.
 ## recoveredStatesMelt <- threshMelt(recovered, 10, states=TRUE,
 ##                                   onlyUS=TRUE, entireUS=FALSE);
 

@@ -5,7 +5,7 @@ library(urbnmapr)
 library(anytime)
 library(gganimate)
 
-inputData <- read.csv("daily.csv",
+inputData <- read.csv("data/daily.csv",
                       header=TRUE, stringsAsFactors=FALSE);
 colnames(inputData)[6] <- "deaths";
 
@@ -36,7 +36,7 @@ gp <- ggplot() +
     labs(title=paste0("positive diagnoses as of ",
                       format(anytime(as.character(targetDate)), "%d %B %Y")));
 
-ggsave("state-positives.png", plot=gp, device="png");
+ggsave("images/state-positives.png", plot=gp, device="png");
 
 gp <- ggplot() +
     geom_polygon(data=covid,
@@ -47,7 +47,7 @@ gp <- ggplot() +
     labs(title=paste0("deaths as of ",
                       format(anytime(as.character(targetDate)), "%d %B %Y")));
 
-ggsave("state-deaths.png", plot=gp, device="png");
+ggsave("images/state-deaths.png", plot=gp, device="png");
 
 gp <- ggplot() +
     geom_polygon(data=covid,
@@ -59,7 +59,7 @@ gp <- ggplot() +
     labs(title=paste0("testing ratio (positives/total) as of ",
                       format(anytime(as.character(targetDate)), "%d %B %Y")));
 
-ggsave("state-testing.png", plot=gp, device="png");
+ggsave("images/state-testing.png", plot=gp, device="png");
 
 
 ## Now we're going to do the animation.  To begin with, we start with
@@ -94,4 +94,4 @@ gp.anim <- ggplot() +
                       ": {frame_time}"));
 
 animate(gp.anim, nframes=100, fps = 4, width = 750, height = 450)
-anim_save("state-testing.gif", plot=gp.anim, path = ".");
+anim_save("images/state-testing.gif", plot=gp.anim, path = ".");

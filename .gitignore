@@ -1,0 +1,51 @@
+# Generated source files configured with cmake
+src/main/VRConfig.h
+
+# External junk
+.DS_Store
+_ReSharper*
+*.opensdf
+*.sdf
+*.dir
+*.vcxproj*
+*.sln
+*.bak
+Win32
+Debug
+Release
+*.pyc
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+.\#*
+
+# VIM
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
+
+# R stuff
+.Rproj.user
+.Rhistory
+.RData
+Rplot.png
+*.Rproj
+
+# Project specific
+trash.*
+images/*.png
+images/*.gif
+data/*.csv
+data/backup
+data/backup/*
+update-covid
+
+
