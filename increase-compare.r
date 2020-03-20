@@ -27,7 +27,8 @@ stateAbbvs <- list("Alabama,US"="AL", "Alaska,US"="AK", "Arizona,US"="AZ",
                    "Tennessee,US"="TN", "Texas,US"="TX", "Utah,US"="UT",
                    "Vermont,US"="VT", "Virginia,US"="VA", "Washington,US"="WA",
                    "West Virginia,US"="WV", "Wisconsin,US"="WI",
-                   "Wyoming,US"="WY", "US"="US");
+                   "Wyoming,US"="WY", "Puerto Rico,US"="PR",
+                   "Guam,US"="GU", "Virgin Islands,US"="VI", "US"="US");
 
 
 covid.clean <- function(inputData) {
