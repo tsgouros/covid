@@ -22,3 +22,7 @@ wget https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/cs
 mv full_data.csv backup/
 wget https://covid.ourworldindata.org/data/full_data.csv
 
+## usafacts.org
+wget https://static.usafacts.org/public/data/covid-19/covid_confirmed_usafacts.csv
+wget https://static.usafacts.org/public/data/covid-19/covid_deaths_usafacts.csv
+
