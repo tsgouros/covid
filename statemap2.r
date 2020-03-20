@@ -93,5 +93,5 @@ gp.anim <- ggplot() +
                       format(anytime(as.character(targetDate)), "%d %B %Y"),
                       ": {frame_time}"));
 
-animate(gp.anim, nframes=100, fps = 4, width = 750, height = 450)
+animate(gp.anim, nframes=100, fps = 4, width = 750, height = 450, end_pause=20)
 anim_save("images/state-testing.gif", plot=gp.anim, path = ".");
