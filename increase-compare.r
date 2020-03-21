@@ -143,6 +143,52 @@ threshMelt <- function(data, threshold, states=FALSE, entireUS=TRUE,
     return(melted);
 }
 
+## Same as above, but without the threshold and time manipulation.
+## Use excludeChina to ignore individual provinces of China.  Use
+## states to toggle seeing the US as a whole or individual states.
+meltNoThresh <- function(data, states=FALSE, entireUS=TRUE,
+                         excludeChina=TRUE, excludeAus=TRUE, excludeCan=TRUE,
+                         onlyUS=FALSE) {
+
+    ## Select places for which the count is over the input threshold.
+    selected <- data;
+    if (excludeChina)
+        ## Ignore individual provinces in China.
+        selected <- selected[,!grepl(",China",colnames(selected))];
+    if (excludeAus)
+        selected <- selected[,!grepl(",Australia",colnames(selected))];
+    if (excludeCan)
+        selected <- selected[,!grepl(",Canada",colnames(selected))];
+
+    if (onlyUS) {
+        selected <- selected[, grepl("US",colnames(selected))];
+    }
+
+    ## The 'drop=FALSE' thing is to prevent the data frame from being
+    ## coerced to a vector when there is only one column.
+    if ((!entireUS) && states) {
+        selected <- selected[, colnames(selected) != "US", drop=FALSE];
+    } else if (entireUS && (!states)) {
+        selected <- selected[, !grepl(",US",colnames(selected)),drop=FALSE];
+    } else if ((!entireUS) && (!states)) {
+        selected <- selected[, !grepl("US",colnames(selected)),drop=FALSE];
+    }
+
+    melted <- data.frame(time=c(), region=c(), value=c());
+    for (name in colnames(selected)) {
+        if (name == "time") next;
+        m <- melt(data[,c("time", name)], id.vars="time",
+                  variable.name="region");
+        m$time <- 1:length(m$time);
+        m <- mutate(m,
+                    label=if_else(time == max(time),
+                                  as.character(region), NA_character_));
+        melted <- rbind(melted, m);
+    }
+    return(melted);
+}
+
+
 input.confirmed <- read.csv("data/time_series_19-covid-Confirmed.csv", head=T);
 input.deaths <- read.csv("data/time_series_19-covid-Deaths.csv", head=T);
 input.recovered <- read.csv("data/time_series_19-covid-Recovered.csv", head=T);
@@ -160,12 +206,12 @@ recoveredMelt <- threshMelt(recovered, 100);
 confirmedStatesMelt <- threshMelt(confirmed, 10, states=TRUE,
                                   onlyUS=TRUE, entireUS=FALSE);
 
-makeNicePlot <- function(inData, threshold, ylabel, ldate) {
+makeNicePlot <- function(inData, xlabel, ylabel, ldate) {
     outp <- ggplot() +
         geom_line(data=inData, aes(x=time,y=value, color=region)) +
         geom_text_repel(data=inData,
                         aes(label=label, x=time, y=value,
-                            color=region, hjust=1)) +
+                            color=region, hjust=1), na.rm=TRUE) +
         guides(color=FALSE) + theme_bw() +
         scale_y_log10(breaks=c(20,50,100,200,500,1000,2000,5000,10000,20000,
                                50000,100000,200000,500000,1000000),
@@ -174,16 +220,18 @@ makeNicePlot <- function(inData, threshold, ylabel, ldate) {
                                "200,000","500,000","1,000,000")) +
         scale_x_continuous(breaks=seq(0,200,5)) +
         theme(plot.margin = unit(c(1,3,1,1), "lines")) +
-        labs(x=paste0("Days since ", threshold," ", ylabel,
-                      " (", format(anytime(as.character(ldate)),
-                                   "%d %B %Y"), ")"),
+        labs(x=paste0(xlabel, " (", format(anytime(as.character(ldate)),
+                                           "%d %B %Y"), ")"),
              y=ylabel);
     return(outp);
 }
 
-gpConfirmed <- makeNicePlot(confirmedMelt, 100, "confirmed cases",latestDate);
-gpDeaths <- makeNicePlot(deathsMelt, 20, "deaths",latestDate);
-gpRecovered <- makeNicePlot(recoveredMelt, 100, "recovered cases",latestDate);
+gpConfirmed <- makeNicePlot(confirmedMelt, "days since 100 confirmed cases",
+                            "confirmed cases", latestDate);
+gpDeaths <- makeNicePlot(deathsMelt, "days since 20 deaths",
+                         "deaths", latestDate);
+gpRecovered <- makeNicePlot(recoveredMelt, "days since 100 recovered cases",
+                            "recovered cases", latestDate);
 
 ggsave("images/confirmed.png", plot=gpConfirmed, device="png");
 ggsave("images/deaths.png", plot=gpDeaths, device="png");
@@ -192,7 +240,8 @@ ggsave("images/recovered.png", plot=gpRecovered, device="png");
 declutter <- data.frame(time=confirmed$time, Canada=confirmed$Canada, US=confirmed$US, Spain=confirmed$Spain, Italy=confirmed$Italy, Denmark=confirmed$Denmark, "South Korea"=confirmed[,"South Korea"], Iran=confirmed$Iran, Japan=confirmed$Japan, Germany=confirmed$Germany, "United Kingdom"=confirmed[,"United Kingdom"], China=confirmed$China);
 
 declutterMelt <- threshMelt(declutter, 100);
-gpDeclutter <- makeNicePlot(declutterMelt, 100, "confirmed cases",latestDate);
+gpDeclutter <- makeNicePlot(declutterMelt, "days since 100 confirmed cases",
+                            "confirmed cases", latestDate);
 ggsave("images/declutter.png", plot=gpDeclutter, device="png");
 
 
@@ -208,10 +257,58 @@ for (i in 1:length(confirmedStatesMelt$label)) {
     }
 }
 
-gpConfirmedStates <- makeNicePlot(confirmedStatesMelt, 10,
+gpConfirmedStates <- makeNicePlot(confirmedStatesMelt,
+                                  "days since 10 confirmed cases",
                                   "confirmed cases", latestDate);
 
 ggsave("images/confirmedStates.png", plot=gpConfirmedStates, device="png");
+
+
+## Make one for the states that share a real time axis, no threshold.
+conStates <- meltNoThresh(confirmed, states=TRUE, onlyUS=TRUE, entireUS=FALSE);
+conStates <- conStates[conStates$time >= 49,];
+conStates$time <- conStates$time - 49;
+
+## We're going to make a log plot out of this, so get rid of zeros.
+conStates$value[conStates$value==0] <- 1.0
+
+## Change the state names to state abbreviations.
+for (i in 1:length(conStates$label)) {
+    if (!is.na(conStates$label[i])) {
+        conStates$label[i] <-
+            stateAbbvs[[as.character(conStates$label[i])]];
+    }
+}
+
+gpConStates <- ggplot() +
+    geom_line(data=conStates, aes(x=time,y=value, color=region)) +
+    geom_text_repel(data=conStates,
+                    aes(label=label, x=time, y=value,
+                        color=region, hjust=1),
+                    na.rm=TRUE,
+                    nudge_x = 0.15,
+                    direction="y",
+                    hjust=0,
+                    segment.size=0.2) +
+    guides(color=FALSE) + theme_bw() +
+    scale_y_log10(breaks=c(20,50,100,200,500,1000,2000,5000,10000,20000,
+                           50000,100000,200000,500000,1000000),
+                  labels=c("20", "50", "100","200","500","1000","2000","5000",
+                           "10,000","20,000","50,000","100,000",
+                           "200,000","500,000","1,000,000")) +
+    scale_x_continuous(breaks=seq(0,200,5)) +
+    theme(plot.margin = unit(c(1,3,1,1), "lines")) +
+    labs(x=paste0("days since March 4, 2020",
+                  " (", format(anytime(as.character(latestDate)),
+                               "%d %B %Y"), ")"),
+         y="log confirmed cases");
+
+
+
+
+ggsave("images/confirmedStatesTime.png", plot=gpConStates, device="png");
+
+
 
 ## These are commented out just because there isn't really enough data
 ## yet to tell a story. Should work, though.
