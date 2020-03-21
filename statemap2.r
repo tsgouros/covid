@@ -7,7 +7,7 @@ library(gganimate)
 
 inputData <- read.csv("data/daily.csv",
                       header=TRUE, stringsAsFactors=FALSE);
-colnames(inputData)[6] <- "deaths";
+colnames(inputData)[7] <- "deaths";
 
 
 ## Set all the NAs to zero.
@@ -38,7 +38,7 @@ gp <- ggplot() +
 
 ggsave("images/state-positives.png", plot=gp, device="png");
 
-gp <- ggplot() +
+gpd <- ggplot() +
     geom_polygon(data=covid,
                  mapping=aes(x=long, y=lat, group=group, fill=deaths),
                  color="white", size=0.25) +
@@ -47,7 +47,7 @@ gp <- ggplot() +
     labs(title=paste0("deaths as of ",
                       format(anytime(as.character(targetDate)), "%d %B %Y")));
 
-ggsave("images/state-deaths.png", plot=gp, device="png");
+ggsave("images/state-deaths.png", plot=gpd, device="png");
 
 gp <- ggplot() +
     geom_polygon(data=covid,
@@ -75,14 +75,14 @@ stateNames <- factor(urbnmapr::states$state_abbv);
 inputData <- inputData[inputData$state %in% levels(stateNames),];
 
 ## Join the entire input covid data to the state borders from urbnmapr
-covid <- left_join(inputData,
-                   urbnmapr::states,
-                   by="state_abbv");
+covidAll <- left_join(inputData,
+                      urbnmapr::states,
+                      by="state_abbv");
 
-covid$date <- anytime(as.character(covid$date));
+covidAll$date <- anytime(as.character(covidAll$date));
 
 gp.anim <- ggplot() +
-    geom_polygon(data=covid,
+    geom_polygon(data=covidAll,
                  mapping=aes(x=long, y=lat, group=group, fill=positive/total),
                  color="white", size=0.25) +
     transition_time(date) + ease_aes('linear') +
