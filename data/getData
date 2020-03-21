@@ -23,6 +23,8 @@ mv full_data.csv backup/
 wget https://covid.ourworldindata.org/data/full_data.csv
 
 ## usafacts.org
+mv covid_confirmed_usafacts.csv backup/
 wget https://static.usafacts.org/public/data/covid-19/covid_confirmed_usafacts.csv
+mv covid_deaths_usafacts.csv backup/
 wget https://static.usafacts.org/public/data/covid-19/covid_deaths_usafacts.csv
 
