@@ -280,13 +280,47 @@ for (i in 1:length(conStates$label)) {
     }
 }
 
+rank <- list();
+selected <- rep(TRUE, length(conStates$region));
+for (lev in levels(conStates$region)) {
+    if (max(conStates[conStates$region==lev,"value"]) < 5) {
+        selected[conStates$region==lev] <- FALSE;
+    }
+
+    rank[[stateAbbvs[[as.character(lev)]]]] <-
+        max(conStates[conStates$region==lev,"value"]);
+}
+conStates <- conStates[selected,];
+
+## Create 3 tiers of states
+rankNames <- names(rank)[order(unlist(rank), decreasing=TRUE)];
+tier1 <- rankNames[(0:(length(rankNames)-1) %% 3) == 0];
+tier2 <- rankNames[(0:(length(rankNames)-1) %% 3) == 1];
+tier3 <- rankNames[(0:(length(rankNames)-1) %% 3) == 2];
+
 gpConStates <- ggplot() +
     geom_line(data=conStates, aes(x=time,y=value, color=region)) +
-    geom_text_repel(data=conStates,
+    geom_text_repel(data=subset(conStates, label %in% tier1),
                     aes(label=label, x=time, y=value,
                         color=region, hjust=1),
                     na.rm=TRUE,
-                    nudge_x = 0.15,
+                    nudge_x = 1.0,
+                    direction="y",
+                    hjust=0,
+                    segment.size=0.2) +
+    geom_text_repel(data=subset(conStates, label %in% tier2),
+                    aes(label=label, x=time, y=value,
+                        color=region, hjust=1),
+                    na.rm=TRUE,
+                    nudge_x = 2.0,
+                    direction="y",
+                    hjust=0,
+                    segment.size=0.2) +
+    geom_text_repel(data=subset(conStates, label %in% tier3),
+                    aes(label=label, x=time, y=value,
+                        color=region, hjust=1),
+                    na.rm=TRUE,
+                    nudge_x = 3.0,
                     direction="y",
                     hjust=0,
                     segment.size=0.2) +
@@ -296,7 +330,9 @@ gpConStates <- ggplot() +
                   labels=c("20", "50", "100","200","500","1000","2000","5000",
                            "10,000","20,000","50,000","100,000",
                            "200,000","500,000","1,000,000")) +
-    scale_x_continuous(breaks=seq(0,200,5)) +
+    ## The limit here is expanded to make room for the labels.
+    scale_x_continuous(breaks=seq(0,200,5),
+                       limits=c(0, max(conStates$time)+4)) +
     theme(plot.margin = unit(c(1,3,1,1), "lines")) +
     labs(x=paste0("days since March 4, 2020",
                   " (", format(anytime(as.character(latestDate)),
