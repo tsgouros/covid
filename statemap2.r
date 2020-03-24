@@ -26,14 +26,18 @@ covid <- left_join(inputData[inputData$date==targetDate,],
 
 cat("target date:", targetDate, "\n");
 
+## Too many confirmed cases, switching to log plot.
+covid$positive[covid$positive == 0] <- 1;
+
 ## Execute the plot.
 gp <- ggplot() +
     geom_polygon(data=covid,
                  mapping=aes(x=long, y=lat, group=group, fill=positive),
                  color="white", size=0.25) +
     coord_map(projection="albers", lat0=39, lat1=45) +
-    scale_fill_continuous(low = "thistle2", high = "darkred", guide="colorbar") +
-    labs(title=paste0("positive diagnoses as of ",
+    scale_fill_continuous(low = "thistle2", high = "darkred",
+                          guide="colorbar", trans="log") +
+    labs(title=paste0("log positive diagnoses as of ",
                       format(anytime(as.character(targetDate)), "%d %B %Y")));
 
 ggsave("images/state-positives.png", plot=gp, device="png");
@@ -81,7 +85,7 @@ covidAll <- left_join(inputData,
 
 covidAll$date <- anytime(as.character(covidAll$date));
 
-gp.anim <- ggplot() +
+gpAnim <- ggplot() +
     geom_polygon(data=covidAll,
                  mapping=aes(x=long, y=lat, group=group, fill=positive/total),
                  color="white", size=0.25) +
@@ -93,5 +97,7 @@ gp.anim <- ggplot() +
                       format(anytime(as.character(targetDate)), "%d %B %Y"),
                       ": {frame_time}"));
 
-animate(gp.anim, nframes=100, fps = 4, width = 750, height = 450, end_pause=20)
-anim_save("images/state-testing.gif", plot=gp.anim, path = ".");
+animate(gpAnim, nframes=100, fps = 4, width = 750, height = 450, end_pause=20);
+anim_save("images/state-testing.gif", plot=gpAnim, path = ".");
+
+
