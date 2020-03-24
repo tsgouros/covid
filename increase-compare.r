@@ -30,6 +30,36 @@ stateAbbvs <- list("Alabama,US"="AL", "Alaska,US"="AK", "Arizona,US"="AZ",
                    "Wyoming,US"="WY", "Puerto Rico,US"="PR",
                    "Guam,US"="GU", "Virgin Islands,US"="VI", "US"="US");
 
+## Population estimates from US Census Bureau, 2019
+statePop <- list("California,US"=39512223,     "Texas,US"=28995881,
+                 "Florida,US"=21477737,    "New York,US"=19453561,
+                 "Pennsylvania,US"=12801989,    "Illinois,US"=12671821,
+                 "Ohio,US"=11689100,    "Georgia,US"=10617423,
+                 "North Carolina,US"=10488084,    "Michigan,US"=9986857,
+                 "New Jersey,US"=8882190,    "Virginia,US"=8535519,
+                 "Washington,US"=7614893,    "Arizona,US"=7278717,
+                 "Massachusetts,US"=6949503,    "Tennessee,US"=6833174,
+                 "Indiana,US"=6732219,    "Missouri,US"=6137428,
+                 "Maryland,US"=6045680,    "Wisconsin,US"=5822434,
+                 "Colorado,US"=5758736,    "Minnesota,US"=5639632,
+                 "South Carolina,US"=5148714,    "Alabama,US"=4903185,
+                 "Louisiana,US"=4648794,    "Kentucky,US"=4467673,
+                 "Oregon,US"=4217737,    "Oklahoma,US"=3956971,
+                 "Connecticut,US"=3565287,    "Utah,US"=3205958,
+                 "Iowa,US"=3155070,    "Puerto Rico,US"=3193694,
+                 "Nevada,US"=3080156,    "Arkansas,US"=3017825,
+                 "Mississippi,US"=2976149,    "Kansas,US"=2913314,
+                 "New Mexico,US"=2096829,    "Nebraska,US"=1934408,
+                 "Idaho,US"=1792065,    "West Virginia,US"=1787147,
+                 "Hawaii,US"=1415872,    "New Hampshire,US"=1359711,
+                 "Maine,US"=1344212,    "Montana,US"=1068778,
+                 "Rhode Island,US"=1059361,    "Delaware,US"=973764,
+                 "South Dakota,US"=884659,    "North Dakota,US"=762062,
+                 "Alaska,US"=731545,    "District of Columbia,US"=705749,
+                 "Vermont,US"=623989,    "Wyoming,US"=578759,
+                 "Guam,US"=165718,    "Virgin Islands,US"=104914,
+                 "American Samoa,US"=55641,    "Northern Mariana Islands,US"=55194,
+                 "US"=331814684);
 
 covid.clean <- function(inputData) {
     ## Filter out rows we don't want, like "Diamond Princess" and "Kitsap
@@ -263,6 +293,25 @@ gpConfirmedStates <- makeNicePlot(confirmedStatesMelt,
 
 ggsave("images/confirmedStates.png", plot=gpConfirmedStates, device="png");
 
+confirmedStatesPerCap <- confirmedStatesMelt %>%
+    mutate(value=purrr::pmap_dbl(list(value, region),
+                                 function(x,r) {x/statePop[[r]]}));
+gpConfirmedStatesPerCap <- ggplot() +
+        geom_line(data=confirmedStatesPerCap, aes(x=time,y=value, color=region)) +
+        geom_text_repel(data=confirmedStatesPerCap,
+                        aes(label=label, x=time, y=value,
+                            color=region, hjust=1), na.rm=TRUE) +
+        guides(color=FALSE) + theme_bw() +
+        scale_y_log10() +
+        scale_x_continuous(breaks=seq(0,200,5)) +
+        theme(plot.margin = unit(c(1,3,1,1), "lines")) +
+        labs(x=paste0("days since 10 confirmed cases (",
+                      format(anytime(as.character(latestDate)),
+                             "%d %B %Y"), ")"),
+             y="log confirmed cases per capita");
+
+ggsave("images/confirmedStatesPerCap.png", plot=gpConfirmedStatesPerCap,
+       device="png");
 
 ## Make one for the states that share a real time axis, no threshold.
 conStates <- meltNoThresh(confirmed, states=TRUE, onlyUS=TRUE, entireUS=FALSE);
@@ -297,6 +346,11 @@ rankNames <- names(rank)[order(unlist(rank), decreasing=TRUE)];
 tier1 <- rankNames[(0:(length(rankNames)-1) %% 3) == 0];
 tier2 <- rankNames[(0:(length(rankNames)-1) %% 3) == 1];
 tier3 <- rankNames[(0:(length(rankNames)-1) %% 3) == 2];
+
+## Make this per capita
+conStates <- conStates %>%
+    mutate(value=purrr::pmap_dbl(list(value, region),
+                                 function(x,r) {x/statePop[[r]]}));
 
 gpConStates <- ggplot() +
     geom_line(data=conStates, aes(x=time,y=value, color=region)) +
@@ -337,7 +391,7 @@ gpConStates <- ggplot() +
     labs(x=paste0("days since March 4, 2020",
                   " (", format(anytime(as.character(latestDate)),
                                "%d %B %Y"), ")"),
-         y="log confirmed cases");
+         y="log confirmed cases per capita");
 
 
 
