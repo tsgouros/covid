@@ -199,7 +199,8 @@ makeNicePlot <- function(inData, xlabel, ylabel, ldate) {
         geom_line(data=inData, aes(x=time,y=value, color=region)) +
         geom_text_repel(data=inData,
                         aes(label=label, x=time, y=value,
-                            color=region, hjust=1), na.rm=TRUE) +
+                            color=region, hjust=1),
+                        na.rm=TRUE, segment.size=0.25, segment.alpha=0.5) +
         guides(color=FALSE) + theme_bw() +
         scale_y_log10(breaks=c(20,50,100,200,500,1000,2000,5000,10000,20000,
                                50000,100000,200000,500000,1000000),
@@ -287,7 +288,8 @@ gpConfirmedStates <- ggplot(states) +
                     group_by(state) %>%
                     mutate(nstate=ifelse(days==max(days),state,NA)),
                     mapping = aes(label=nstate, x=zdays, y=positive,
-                                  color=state, hjust=1), na.rm=TRUE) +
+                                  color=state, hjust=1),
+                    na.rm=TRUE, segment.size=0.25, segment.alpha=0.5) +
     guides(color=FALSE) + theme_bw() +
     scale_y_log10() +
     scale_x_continuous(breaks=seq(0,200,5)) +
@@ -313,7 +315,8 @@ gpConfirmedStatesPerCap <- ggplot(states) +
                     group_by(state) %>%
                     mutate(nstate=ifelse(days==max(days),state,NA)),
                     mapping = aes(label=nstate, x=zdays, y=percap,
-                                  color=state, hjust=1), na.rm=TRUE) +
+                                  color=state, hjust=1),
+                    na.rm=TRUE, segment.size=0.25, segment.alpha=0.5) +
     guides(color=FALSE) + theme_bw() +
     scale_y_log10() +
     scale_x_continuous(breaks=seq(0,200,5)) +
@@ -326,23 +329,6 @@ gpConfirmedStatesPerCap <- ggplot(states) +
 
 ggsave("images/confirmedStatesPerCap.png", plot=gpConfirmedStatesPerCap,
        device="png");
-
-gpConfirmedStatesPerCapRI <- ggplot(states) +
-    geom_line(mapping = aes(x=zdays,y=percap,
-                            color=ifelse(state=="RI", "black", state))) +
-    geom_text_repel(states %>%
-                    group_by(state) %>%
-                    mutate(nstate=ifelse(days==max(days),state,NA)),
-                    mapping = aes(label=nstate, x=zdays, y=percap,
-                                  color=state, hjust=1), na.rm=TRUE) +
-    guides(color=FALSE) + theme_bw() +
-    scale_y_log10() +
-    scale_x_continuous(breaks=seq(0,200,5)) +
-    theme(plot.margin = unit(c(1,3,1,1), "lines")) +
-    labs(x=paste0("days since 10 confirmed cases (",
-                  format(anytime(as.character(latestDate)),
-                         "%d %B %Y"), ")"),
-         y="log confirmed cases per capita");
 
 ## Same thing, but highlight RI.
 stCol <- rep("blue", 56);
@@ -357,7 +343,8 @@ gpConfirmedStatesPerCapRI <- ggplot(states %>% mutate(RI=state=="RI")) +
                     group_by(state) %>%
                     mutate(nstate=ifelse(days==max(days),state,NA)),
                     mapping = aes(label=nstate, x=zdays, y=percap,
-                                  color=state, hjust=1), na.rm=TRUE) +
+                                  color=state, hjust=1),
+                    na.rm=TRUE, segment.size=0.25, segment.alpha=0.5) +
     guides(color=FALSE) + theme_bw() +
     scale_size_manual(values=c(.5,2)) +
     scale_color_manual(values=stCol) +
@@ -371,6 +358,75 @@ gpConfirmedStatesPerCapRI <- ggplot(states %>% mutate(RI=state=="RI")) +
          y="log confirmed cases per capita");
 
 ggsave("images/confirmedStatesPerCapRI.png", plot=gpConfirmedStatesPerCapRI,
+       device="png");
+
+
+## Same thing, but highlight NC.
+stCol <- rep("blue", 56);
+stCol[states$state == "NC"] <- "red";
+
+gpConfirmedStatesPerCapNC <- ggplot(states %>% mutate(NC=state=="NC")) +
+    geom_line(mapping = aes(x=zdays,y=percap,
+                            color=state,
+                            size=NC)) +
+    geom_text_repel(states %>%
+                    mutate(NC=state=="NC") %>%
+                    group_by(state) %>%
+                    mutate(nstate=ifelse(days==max(days),state,NA)),
+                    mapping = aes(label=nstate, x=zdays, y=percap,
+                                  color=state, hjust=1),
+                    na.rm=TRUE, segment.size=0.25, segment.alpha=0.5) +
+    guides(color=FALSE) + theme_bw() +
+    scale_size_manual(values=c(.5,2)) +
+    scale_color_manual(values=stCol) +
+    scale_y_log10() +
+    scale_x_continuous(breaks=seq(0,200,5)) +
+    theme(plot.margin = unit(c(1,3,1,1), "lines"),
+          legend.position="none") +
+    labs(x=paste0("days since 10 confirmed cases (",
+                  format(anytime(as.character(latestDate)),
+                         "%d %B %Y"), ")"),
+         y="log confirmed cases per capita");
+
+ggsave("images/confirmedStatesPerCapNC.png", plot=gpConfirmedStatesPerCapNC,
+       device="png");
+
+## Let's do it for red states (defined by 2016 pres election)
+
+redStates <- c("AL", "AK", "AZ", "AR", "FL", "GA", "ID", "IN", "IA", "KS",
+               "KY", "LA", "MI", "MS", "MO", "MT", "NE", "NC", "ND", "OH",
+               "OK", "PA", "SC", "SD", "TN", "TX", "UT", "WV", "WI", "WY");
+
+## Lose the little islands.
+states <- states %>% filter(state != "PR", state != "GU", state != "VI");
+
+## Same thing, but highlight Red.
+stCol <- rep("blue", 56);
+stCol[states$state %in% redStates] <- "red";
+
+gpConfirmedStatesPerCapRed <- ggplot(states %>% mutate(RS=state %in% redStates)) +
+    geom_line(mapping = aes(x=zdays,y=percap,
+                            color=state)) +
+    geom_text_repel(states %>%
+                    mutate(RS=state %in% redStates) %>%
+                    group_by(state) %>%
+                    mutate(nstate=ifelse(days==max(days),state,NA)),
+                    mapping = aes(label=nstate, x=zdays, y=percap,
+                                  color=state, hjust=1),
+                    na.rm=TRUE, segment.size=0.25, segment.alpha=0.5) +
+    guides(color=FALSE) + theme_bw() +
+    scale_size_manual(values=c(.5,2)) +
+    scale_color_manual(values=stCol) +
+    scale_y_log10() +
+    scale_x_continuous(breaks=seq(0,200,5)) +
+    theme(plot.margin = unit(c(1,3,1,1), "lines"),
+          legend.position="none") +
+    labs(x=paste0("days since 10 confirmed cases (",
+                  format(anytime(as.character(latestDate)),
+                         "%d %B %Y"), ")"),
+         y="log confirmed cases per capita");
+
+ggsave("images/confirmedStatesPerCapRed.png", plot=gpConfirmedStatesPerCapRed,
        device="png");
 
 
