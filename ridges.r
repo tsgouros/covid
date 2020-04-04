@@ -4,31 +4,32 @@ library(ggplot2)
 library(ggridges)
 library(anytime)
 
-fullData <- read.csv("data/full_data.csv", header=TRUE, stringsAsFactors=TRUE);
-
-fullData <- fullData %>% filter(!is.na(new_cases));
-
-fullData$logCases <-
-    unlist(lapply(fullData$new_cases, function(x) {log(max(x,1.0), base=10)}));
-
 countries <- c("Australia","Austria","Brazil","Canada","China",
  "Cuba","Denmark","France", "Germany", "Greece", "Iceland", "India",
  "Iran", "Israel", "Italy", "Jamaica", "Japan", "Mexico", "Netherlands", "Norway",
- "Russia", "Singapore", "South Korea","Spain", "Sweden","Switzerland",
- "Thailand", "Turkey", "United Kingdom","United States");
+ "Russia", "Singapore", "South_Korea","Spain", "Sweden","Switzerland",
+ "Thailand", "Turkey", "United_Kingdom","United_States_of_America");
 
-#fullData$date <- anytime(fullData$date);
+fullData <- read.csv("data/full_data.csv", header=TRUE, stringsAsFactors=TRUE);
 
-fullData <- fullData[fullData$location %in% countries,];
+fullData <- fullData %>%
+    filter(!is.na(cases)) %>%
+    filter(countriesAndTerritories %in% countries) %>%
+    mutate(time = as.numeric(anytime(paste0(year, "-", month, "-", day)))) %>%
+    mutate(time = ceiling((time - min(time)) / (24 * 60 * 60)));# %>%
+## The 'ceiling' is to deal with daylight savings time.
+##    mutate(countriesAndTerritories = ifelse(countriesAndTerritories == "United_States_of_America", "USA", countriesAndTerritories));
 
-fullData$time <- as.numeric(anytime(fullData$date));
-fullData$time <- (fullData$time - min(fullData$time)) / (24 * 60 * 60)
+## Cannot figure out how to do this with mutate. It always reports
+## that it resulted in NaNs, but there aren't any.
+fullData$logCases <- unlist(lapply(fullData$cases, function(x)
+    {log(max(x,1.0), base=10)}));
 
 ## Squeeze out the momentary zeros.
 squeeze <- function(data) {
     keep <- c();
-    for (loc in levels(data$location)) {
-        subData <- data[data$location == loc,];
+    for (loc in levels(data$countriesAndTerritories)) {
+        subData <- data[data$countriesAndTerritories == loc,];
         subKeep <- rep(TRUE, length(subData$logCases));
         if (length(subKeep) >= 3) {
             for (i in 2:(length(subKeep)-1)) {
@@ -61,8 +62,8 @@ fullData <- squeeze(fullData);
 fullData <- squeeze(fullData);
 
 gridge <- ggplot(fullData,
-                 mapping=aes(x=time, y=location,
-                             fill=location, height=logCases,
+                 mapping=aes(x=time, y=countryterritoryCode,
+                             fill=countryterritoryCode, height=logCases,
                              scale=1.5)) +
     geom_density_ridges_gradient(stat="identity", show.legend=FALSE) +
     scale_y_discrete(expand = c(0.01, 0)) +
