@@ -223,12 +223,22 @@ gpDeaths <- makeNicePlot(deathsMelt, "days since 20 deaths",
 ggsave("images/confirmed.png", plot=gpConfirmed, device="png");
 ggsave("images/deaths.png", plot=gpDeaths, device="png");
 
-declutter <- data.frame(time=confirmed$time, Canada=confirmed$Canada, US=confirmed$US, Spain=confirmed$Spain, Italy=confirmed$Italy, Denmark=confirmed$Denmark, "South Korea"=confirmed[,"South Korea"], Iran=confirmed$Iran, Japan=confirmed$Japan, Germany=confirmed$Germany, "United Kingdom"=confirmed[,"United Kingdom"], China=confirmed$China, Singapore=confirmed$Singapore);
+declutter <- data.frame(time=confirmed$time, Canada=confirmed$Canada, US=confirmed$US, Spain=confirmed$Spain, Italy=confirmed$Italy, Denmark=confirmed$Denmark, "South Korea"=confirmed[,"South Korea"], Iran=confirmed$Iran, France=confirmed$France, Japan=confirmed$Japan, Germany=confirmed$Germany, "United Kingdom"=confirmed[,"United Kingdom"], China=confirmed$China, Singapore=confirmed$Singapore, Sweden=confirmed$Sweden, Norway=confirmed$Norway, Iceland=confirmed$Iceland);
 
 declutterMelt <- threshMelt(declutter, 100);
 gpDeclutter <- makeNicePlot(declutterMelt, "days since 100 confirmed cases",
                             "confirmed cases", latestDate);
 ggsave("images/declutter.png", plot=gpDeclutter, device="png");
+
+
+declutterDeaths <- data.frame(time=deaths$time, Canada=deaths$Canada, US=deaths$US, Spain=deaths$Spain, Italy=deaths$Italy, Denmark=deaths$Denmark, "South Korea"=deaths[,"South Korea"], Iran=deaths$Iran, France=deaths$France, Japan=deaths$Japan, Germany=deaths$Germany, "United Kingdom"=deaths[,"United Kingdom"], China=deaths$China, Singapore=deaths$Singapore, Sweden=deaths$Sweden, Norway=deaths$Norway, Iceland=deaths$Iceland);
+
+declutterDeathsMelt <- threshMelt(declutterDeaths, 20);
+gpDeclutterDeaths <- makeNicePlot(declutterDeathsMelt,
+                                  "days since 20 deaths",
+                            "deaths", latestDate);
+ggsave("images/declutterDeaths.png", plot=gpDeclutterDeaths, device="png");
+
 
 
 ### The JHU data seems to have stopped including US states.  So quit
@@ -263,6 +273,7 @@ statePop <- list("CA"=39512223,   "TX"=28995881,
                  "VT"=623989,     "WY"=578759,
                  "GU"=165718,     "VI"=104914,
                  "AS"=55641,      "MI"=55194,
+                 "MP"=53883,
                  "US"=331814684);
 
 
@@ -274,7 +285,9 @@ states <- states %>% mutate_if(is.numeric, replace_na, 0)
 ## Generate a 'days' variable to be the integer number of days since 3/3/20.
 states <- states %>%
     group_by(state) %>%
-    mutate(days=date-min(date)) %>%
+    mutate(days=as.numeric(difftime(anytime(as.character(date)),
+                                    anytime(as.character(min(date))),
+                                    units="days"))) %>%
     mutate(tdays=ifelse(positive>10,0,1)) %>%
     mutate(dayCount=sum(tdays)) %>%
     mutate(zdays=days-dayCount) %>%
@@ -427,6 +440,42 @@ gpConfirmedStatesPerCapRed <- ggplot(states %>% mutate(RS=state %in% redStates))
          y="log confirmed cases per capita");
 
 ggsave("images/confirmedStatesPerCapRed.png", plot=gpConfirmedStatesPerCapRed,
+       device="png");
+
+## The gulf coast
+
+gulfStates <- c("AL", "FL", "KY", "LA", "MS");
+
+## Lose the little islands.
+states <- states %>% filter(state != "PR", state != "GU", state != "VI");
+
+## Same thing, but highlight Red.
+stCol <- rep("blue", 56);
+stCol[states$state %in% gulfStates] <- "red";
+
+gpConfirmedStatesPerCapRed <- ggplot(states %>% mutate(GS=state %in% gulfStates)) +
+    geom_line(mapping = aes(x=zdays,y=percap,
+                            color=state)) +
+    geom_text_repel(states %>%
+                    mutate(GS=state %in% gulfStates) %>%
+                    group_by(state) %>%
+                    mutate(nstate=ifelse(days==max(days),state,NA)),
+                    mapping = aes(label=nstate, x=zdays, y=percap,
+                                  color=state, hjust=1),
+                    na.rm=TRUE, segment.size=0.25, segment.alpha=0.5) +
+    guides(color=FALSE) + theme_bw() +
+    scale_size_manual(values=c(.5,2)) +
+    scale_color_manual(values=stCol) +
+    scale_y_log10() +
+    scale_x_continuous(breaks=seq(0,200,5)) +
+    theme(plot.margin = unit(c(1,3,1,1), "lines"),
+          legend.position="none") +
+    labs(x=paste0("days since 10 confirmed cases (",
+                  format(anytime(as.character(latestDate)),
+                         "%d %B %Y"), ")"),
+         y="log confirmed cases per capita");
+
+ggsave("images/confirmedStatesPerCapGulf.png", plot=gpConfirmedStatesPerCapRed,
        device="png");
 
 
