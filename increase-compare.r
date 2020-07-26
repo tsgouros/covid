@@ -203,10 +203,13 @@ makeNicePlot <- function(inData, xlabel, ylabel, ldate) {
                         na.rm=TRUE, segment.size=0.25, segment.alpha=0.5) +
         guides(color=FALSE) + theme_bw() +
         scale_y_log10(breaks=c(20,50,100,200,500,1000,2000,5000,10000,20000,
-                               50000,100000,200000,500000,1000000),
+                               50000,100000,200000,500000,1000000,
+                               2000000,5000000,10000000,20000000),
                       labels=c("20", "50", "100","200","500","1000","2000","5000",
                                "10,000","20,000","50,000","100,000",
-                               "200,000","500,000","1,000,000")) +
+                               "200,000","500,000","1,000,000",
+                               "2,000,000","5,000,000","10,000,000",
+                               "20,000,000")) +
         scale_x_continuous(breaks=seq(0,200,5)) +
         theme(plot.margin = unit(c(1,3,1,1), "lines")) +
         labs(x=paste0(xlabel, " (", format(anytime(as.character(ldate)),
@@ -223,7 +226,7 @@ gpDeaths <- makeNicePlot(deathsMelt, "days since 20 deaths",
 ggsave("images/confirmed.png", plot=gpConfirmed, device="png");
 ggsave("images/deaths.png", plot=gpDeaths, device="png");
 
-declutter <- data.frame(time=confirmed$time, Canada=confirmed$Canada, US=confirmed$US, Spain=confirmed$Spain, Italy=confirmed$Italy, Denmark=confirmed$Denmark, "South Korea"=confirmed[,"South Korea"], Iran=confirmed$Iran, France=confirmed$France, Japan=confirmed$Japan, Germany=confirmed$Germany, "United Kingdom"=confirmed[,"United Kingdom"], China=confirmed$China, Singapore=confirmed$Singapore, Sweden=confirmed$Sweden, Norway=confirmed$Norway, Iceland=confirmed$Iceland);
+declutter <- data.frame(time=confirmed$time, Canada=confirmed$Canada, US=confirmed$US, Spain=confirmed$Spain, Italy=confirmed$Italy, Denmark=confirmed$Denmark, "South Korea"=confirmed[,"South Korea"], Iran=confirmed$Iran, France=confirmed$France, Japan=confirmed$Japan, Germany=confirmed$Germany, "United Kingdom"=confirmed[,"United Kingdom"], China=confirmed$China, Singapore=confirmed$Singapore, Sweden=confirmed$Sweden, Norway=confirmed$Norway, "New Zealand"=confirmed[,"New Zealand"], Iceland=confirmed$Iceland, Brazil=confirmed$Brazil);
 
 declutterMelt <- threshMelt(declutter, 100);
 gpDeclutter <- makeNicePlot(declutterMelt, "days since 100 confirmed cases",
@@ -231,7 +234,7 @@ gpDeclutter <- makeNicePlot(declutterMelt, "days since 100 confirmed cases",
 ggsave("images/declutter.png", plot=gpDeclutter, device="png");
 
 
-declutterDeaths <- data.frame(time=deaths$time, Canada=deaths$Canada, US=deaths$US, Spain=deaths$Spain, Italy=deaths$Italy, Denmark=deaths$Denmark, "South Korea"=deaths[,"South Korea"], Iran=deaths$Iran, France=deaths$France, Japan=deaths$Japan, Germany=deaths$Germany, "United Kingdom"=deaths[,"United Kingdom"], China=deaths$China, Singapore=deaths$Singapore, Sweden=deaths$Sweden, Norway=deaths$Norway, Iceland=deaths$Iceland);
+declutterDeaths <- data.frame(time=deaths$time, Canada=deaths$Canada, US=deaths$US, Spain=deaths$Spain, Italy=deaths$Italy, Denmark=deaths$Denmark, "South Korea"=deaths[,"South Korea"], Iran=deaths$Iran, France=deaths$France, Japan=deaths$Japan, Germany=deaths$Germany, "United Kingdom"=deaths[,"United Kingdom"], China=deaths$China, Singapore=deaths$Singapore, Sweden=deaths$Sweden, Norway=deaths$Norway, "New Zealand"=deaths[,"New Zealand"], Iceland=deaths$Iceland, Brazil=deaths$Brazil);
 
 declutterDeathsMelt <- threshMelt(declutterDeaths, 20);
 gpDeclutterDeaths <- makeNicePlot(declutterDeathsMelt,
@@ -316,10 +319,11 @@ ggsave("images/confirmedStates.png", plot=gpConfirmedStates, device="png");
 
 ## Calculate per capita number.  There's probably a more tidyverse-ish
 ## way to do this, but I couldn't figure it out.
-states <- states %>% mutate(percap = 0);
+states <- states %>% mutate(percap = 0, deathsPerCap = 0);
 
 for (i in 1:length(states$state)) {
     states$percap[i] <- states$positive[i] / statePop[[states$state[i]]];
+    states$deathsPercap[i] <- states$death[i] / statePop[[states$state[i]]];
 }
 
 gpConfirmedStatesPerCap <- ggplot(states) +
@@ -346,6 +350,7 @@ ggsave("images/confirmedStatesPerCap.png", plot=gpConfirmedStatesPerCap,
 ## Same thing, but highlight RI.
 stCol <- rep("blue", 56);
 stCol[states$state == "RI"] <- "red";
+stCol[states$state == "MA"] <- "green";
 
 gpConfirmedStatesPerCapRI <- ggplot(states %>% mutate(RI=state=="RI")) +
     geom_line(mapping = aes(x=zdays,y=percap,
@@ -440,6 +445,34 @@ gpConfirmedStatesPerCapRed <- ggplot(states %>% mutate(RS=state %in% redStates))
          y="log confirmed cases per capita");
 
 ggsave("images/confirmedStatesPerCapRed.png", plot=gpConfirmedStatesPerCapRed,
+       device="png");
+
+## Same thing, but highlight Red.
+stCol <- rep("blue", 56);
+stCol[states$state %in% redStates] <- "red";
+
+gpDeathsStatesPerCapRed <- ggplot(states %>% mutate(RS=state %in% redStates)) +
+    geom_line(mapping = aes(x=zdays,y=deathsPercap,
+                            color=state)) +
+    geom_text_repel(states %>%
+                    mutate(RS=state %in% redStates) %>%
+                    group_by(state) %>%
+                    mutate(nstate=ifelse(days==max(days),state,NA)),
+                    mapping = aes(label=nstate, x=zdays, y=deathsPercap,
+                                  color=state, hjust=1),
+                    na.rm=TRUE, segment.size=0.25, segment.alpha=0.5) +
+    guides(color=FALSE) + theme_bw() +
+    scale_size_manual(values=c(.5,2)) +
+    scale_color_manual(values=stCol) +
+    scale_x_continuous(breaks=seq(0,200,5)) +
+    theme(plot.margin = unit(c(1,3,1,1), "lines"),
+          legend.position="none") +
+    labs(x=paste0("days since 10 confirmed cases (",
+                  format(anytime(as.character(latestDate)),
+                         "%d %B %Y"), ")"),
+         y="confirmed cases per capita");
+
+ggsave("images/confirmedStatesPerCapRedNL.png", plot=gpConfirmedStatesPerCapRed,
        device="png");
 
 ## The gulf coast

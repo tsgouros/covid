@@ -6,7 +6,8 @@ library(anytime)
 
 countries <- c("Australia","Austria","Brazil","Canada","China",
  "Cuba","Denmark","France", "Germany", "Greece", "Iceland", "India",
- "Iran", "Israel", "Italy", "Jamaica", "Japan", "Mexico", "Netherlands", "Norway",
+ "Iran", "Israel", "Italy", "Jamaica", "Japan", "Netherlands",
+ "New_Zealand", "Norway",
  "Russia", "Singapore", "South_Korea","Spain", "Sweden","Switzerland",
  "Thailand", "Turkey", "United_Kingdom","United_States_of_America");
 

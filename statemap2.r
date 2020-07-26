@@ -47,57 +47,62 @@ gpd <- ggplot() +
                  mapping=aes(x=long, y=lat, group=group, fill=deaths),
                  color="white", size=0.25) +
     coord_map(projection="albers", lat0=39, lat1=45) +
-    scale_fill_continuous(low = "white", high = "darkblue", guide="colorbar") +
+    scale_fill_continuous(low = "white", high = "darkblue",
+                          guide="colorbar", trans="log") +
     labs(title=paste0("deaths as of ",
                       format(anytime(as.character(targetDate)), "%d %B %Y")));
 
 ggsave("images/state-deaths.png", plot=gpd, device="png");
 
-gp <- ggplot() +
-    geom_polygon(data=covid,
-                 mapping=aes(x=long, y=lat, group=group, fill=positive/total),
-                 color="white", size=0.25) +
-    coord_map(projection="albers", lat0=39, lat1=45) +
-    scale_fill_continuous(low = "green", high = "red", guide="colorbar") +
-    theme(plot.margin = unit(c(0,0,0,0), "lines")) +
-    labs(title=paste0("testing ratio (positives/total) as of ",
-                      format(anytime(as.character(targetDate)), "%d %B %Y")));
-
-ggsave("images/state-testing.png", plot=gp, device="png");
+## Abandoning the testing maps until we think of a better way to track
+## it, or a better data source.
 
 
-## Now we're going to do the animation.  To begin with, we start with
-## the whole dataset, minus the early incomplete days.
+## gp <- ggplot() +
+##     geom_polygon(data=covid,
+##                  mapping=aes(x=long, y=lat, group=group, fill=positive/total),
+##                  color="white", size=0.25) +
+##     coord_map(projection="albers", lat0=39, lat1=45) +
+##     scale_fill_continuous(low = "green", high = "red", guide="colorbar") +
+##     theme(plot.margin = unit(c(0,0,0,0), "lines")) +
+##     labs(title=paste0("testing ratio (positives/total) as of ",
+##                       format(anytime(as.character(targetDate)), "%d %B %Y")));
 
-##inputData <- inputData[order(inputData$date),];
+## ggsave("images/state-testing.png", plot=gp, device="png");
 
-## Ignore the incomplete early days.
-inputData <- inputData[inputData$date > 20200307,];
 
-## Ignore PR, GU, VI, AS.  (Sorry guys.)
-stateNames <- factor(urbnmapr::states$state_abbv);
-inputData <- inputData[inputData$state %in% levels(stateNames),];
+## ## Now we're going to do the animation.  To begin with, we start with
+## ## the whole dataset, minus the early incomplete days.
 
-## Join the entire input covid data to the state borders from urbnmapr
-covidAll <- left_join(inputData,
-                      urbnmapr::states,
-                      by="state_abbv");
+## ##inputData <- inputData[order(inputData$date),];
 
-covidAll$date <- anytime(as.character(covidAll$date));
+## ## Ignore the incomplete early days.
+## inputData <- inputData[inputData$date > 20200307,];
 
-gpAnim <- ggplot() +
-    geom_polygon(data=covidAll,
-                 mapping=aes(x=long, y=lat, group=group, fill=positive/total),
-                 color="white", size=0.25) +
-    transition_time(date) + ease_aes('linear') +
-    coord_map(projection="albers", lat0=39, lat1=45) +
-    scale_fill_continuous(low = "green", high = "red", guide="colorbar") +
-    theme(plot.margin = unit(c(0,0,0,0), "lines")) +
-    labs(title=paste0("testing ratio (positives/total) as of ",
-                      format(anytime(as.character(targetDate)), "%d %B %Y"),
-                      ": {frame_time}"));
+## ## Ignore PR, GU, VI, AS.  (Sorry guys.)
+## stateNames <- factor(urbnmapr::states$state_abbv);
+## inputData <- inputData[inputData$state %in% levels(stateNames),];
 
-animate(gpAnim, nframes=100, fps = 4, width = 750, height = 450, end_pause=20);
-anim_save("images/state-testing.gif", plot=gpAnim, path = ".");
+## ## Join the entire input covid data to the state borders from urbnmapr
+## covidAll <- left_join(inputData,
+##                       urbnmapr::states,
+##                       by="state_abbv");
+
+## covidAll$date <- anytime(as.character(covidAll$date));
+
+## gpAnim <- ggplot() +
+##     geom_polygon(data=covidAll,
+##                  mapping=aes(x=long, y=lat, group=group, fill=positive/total),
+##                  color="white", size=0.25) +
+##     transition_time(date) + ease_aes('linear') +
+##     coord_map(projection="albers", lat0=39, lat1=45) +
+##     scale_fill_continuous(low = "green", high = "red", guide="colorbar") +
+##     theme(plot.margin = unit(c(0,0,0,0), "lines")) +
+##     labs(title=paste0("testing ratio (positives/total) as of ",
+##                       format(anytime(as.character(targetDate)), "%d %B %Y"),
+##                       ": {frame_time}"));
+
+## animate(gpAnim, nframes=100, fps = 4, width = 750, height = 450, end_pause=20);
+## anim_save("images/state-testing.gif", plot=gpAnim, path = ".");
 
 
